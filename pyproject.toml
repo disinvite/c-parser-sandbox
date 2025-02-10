@@ -1,0 +1,34 @@
+[project]
+name = "sandbox"
+readme = "README.md"
+license = { "file" = "LICENSE" }
+authors = []
+keywords = ["parser"]
+classifiers = []
+urls = { }
+dependencies = []
+dynamic = ["version", "description"]
+
+[build-system]
+requires = ["py-build-cmake~=0.4.1"]
+build-backend = "py_build_cmake.build"
+
+[tool.py-build-cmake.module]
+name = "sandbox"
+directory = "src"
+
+[tool.py-build-cmake.sdist]
+include = ["CMakeLists.txt", "src/*"]
+exclude = ["src/sandbox"]
+
+[tool.py-build-cmake.cmake]
+minimum_version = "3.17"
+build_type = "RelWithDebInfo"
+source_path = "."
+build_args = ["-j"]
+install_components = ["python_modules"]
+
+[tool.py-build-cmake.stubgen]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
