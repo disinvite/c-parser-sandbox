@@ -297,12 +297,13 @@ bool CharStar_next(CharStar* cs) {
             read_string(cs);
             return true;
         }
-        else if (is_punctuation_start(cs->cur)) {
-            read_punctuation(cs);
-            return true;
-        }
+        // Numeric test must come before punctuation test so we capture numbers like '.5'.
         else if (is_digit(cs->cur) || (cs->cur == '.' && is_digit(cs->next))) {
             read_numeric(cs);
+            return true;
+        }
+        else if (is_punctuation_start(cs->cur)) {
+            read_punctuation(cs);
             return true;
         }
 
