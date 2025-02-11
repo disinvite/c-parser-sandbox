@@ -92,3 +92,43 @@ def test_number_samples(tk, number: str):
 def test_distinguish_struct_member_and_decimal(tk):
     """Difference between a.100 and a.a100"""
     pass
+
+
+# fmt: off
+PUNCTUATION_SAMPLES = (
+    # inc/dec
+    "++", "--",
+
+    # operators
+    "+", "-", "*", "/", "%", ">", "<", ">=", "<=", ">>", "<<", "&&", "||", "!", "!=", "==",
+
+    # assignment
+    "+=", "-=", "*=", "/=", "%=", "&=", "|=", "^=", ">>=", "<<=", "=",
+
+    # binary
+    "&", "|", "^", "~",
+
+    # delimiters
+    "(", ")", "[", "]", "{", "}", ";", ",",
+
+    # struct members
+    ".", "->",
+
+    # preprocessor
+    "#",
+
+    # continuation (improperly used)
+    "\\",
+
+    # ternary, bitfield, c++ namespace
+    "?", ":", "::",
+
+    # ellipsis
+    # "...",
+)
+# fmt: on
+
+@pytest.mark.parametrize("symbol", PUNCTUATION_SAMPLES)
+def test_punctuation_samples(tk, symbol: str):
+    print(symbol, ord(symbol[0]))
+    assert symbol in tk_values(tk(symbol))

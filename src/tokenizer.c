@@ -11,6 +11,21 @@ bool is_alphanumeric(char c) {
     return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9');
 }
 
+// TODO: hack to get things moving. this includes ($, ", ') which should be ignored or handled differently.
+bool is_punctuation_start(char c) {
+    return (c >= '!' && c <= '/') || (c >= ':' && c <= '?') || (c >= '[' && c <= '^') || (c >= '{' && c <= '~');
+}
+
+bool punctuation_can_be_doubled(char c) {
+    // Omit equal sign; it will be captured in the can_be_assignment function.
+    return c == '+' || c == '-' || c == '&' || c == '|' || c == ':';
+}
+
+// Can this character be followed by '=' and be a valid token?
+bool punctuation_can_be_assignment(char c) {
+    return c == '+' || c == '-' || c == '*' || c == '/' || c == '%' || c == '&' || c == '|' || c == '^' || c == '>' || c == '<' || c == '=' || c == '!';
+}
+
 const char* TokenTypeNames[] = {
     "",
     "PREPROCESSOR",
@@ -218,6 +233,46 @@ void read_numeric(CharStar* cs) {
     cs->token.value = buf_finish(cs);
 }
 
+void read_punctuation(CharStar* cs) {
+    int line = cs->line;
+    int pos = cs->pos;
+
+    char cur;
+    char next;
+    CharStar_iter(cs, &cur, &next);
+
+    buf_push(cs, cur);
+
+    // Left or right shift
+    if ((cur == '>' || cur == '<') && cur == next) {
+        CharStar_iter(cs, &cur, &next);
+        buf_push(cs, cur);
+        // Check for assignment
+        if (next == '=') {
+            CharStar_iter(cs, &cur, &next);
+            buf_push(cs, cur);
+        }
+    }
+    // Doubled-up characters (e.g. ++ or --)
+    // or characters that can precede the equal sign
+    else if ((punctuation_can_be_doubled(cur) && cur == next) || (punctuation_can_be_assignment(cur) && next == '=')) {
+        CharStar_iter(cs, &cur, &next);
+        buf_push(cs, cur);
+    }
+    // Pointer to struct member
+    else if (cur == '-' && next == '>') {
+        CharStar_iter(cs, &cur, &next);
+        buf_push(cs, cur);
+    }
+
+    // TODO: ... is a special case because we have no mechanism (yet) to read '..' and rewind the ptr.
+
+    cs->token.type = OPERATOR;
+    cs->token.line = line;
+    cs->token.pos = pos;
+    cs->token.value = buf_finish(cs);
+}
+
 bool CharStar_next(CharStar* cs) {
     while (cs->cur != '\0') {
         // Ignore whitespace
@@ -235,9 +290,15 @@ bool CharStar_next(CharStar* cs) {
                 read_block_comment(cs);
                 return true;
             }
+            // Fall through for '/' division symbol
         }
-        else if (cs->cur == '"') {
+
+        if (cs->cur == '"') {
             read_string(cs);
+            return true;
+        }
+        else if (is_punctuation_start(cs->cur)) {
+            read_punctuation(cs);
             return true;
         }
         else if (is_digit(cs->cur) || (cs->cur == '.' && is_digit(cs->next))) {
