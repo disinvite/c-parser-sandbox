@@ -65,3 +65,30 @@ def test_block_comment_one_star(tk):
     assert code in tk_values(tk(code))
 
 
+NUMBER_SAMPLES = (
+    "0",
+    "1",
+    ".5",
+    ".5f",
+    "1.0f",
+    "1.0d",
+    "0x1234",
+    "0xdeadbeef",
+    "0xABCD",
+    "0xd00d",
+    "0x0",
+    "0b1101",
+    "0o777",
+)
+
+
+@pytest.mark.parametrize("number", NUMBER_SAMPLES)
+def test_number_samples(tk, number: str):
+    code = f"x = ${number};"
+    assert number in tk_values(tk(code))
+
+
+@pytest.mark.skip(reason="todo")
+def test_distinguish_struct_member_and_decimal(tk):
+    """Difference between a.100 and a.a100"""
+    pass

@@ -3,6 +3,14 @@
 #include <stdbool.h>
 #include <stdio.h>
 
+bool is_digit(char c) {
+    return c >= '0' && c <= '9';
+}
+
+bool is_alphanumeric(char c) {
+    return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9');
+}
+
 const char* TokenTypeNames[] = {
     "",
     "PREPROCESSOR",
@@ -189,8 +197,30 @@ void read_string(CharStar* cs) {
     cs->token.value = buf_finish(cs);
 }
 
+void read_numeric(CharStar* cs) {
+    int line = cs->line;
+    int pos = cs->pos;
+
+    char cur;
+    char next;
+
+    while (CharStar_iter(cs, &cur, &next)) {
+        if (cur != '.' && !is_alphanumeric(cur)) {
+            break;
+        }
+
+        buf_push(cs, cur);
+    }
+
+    cs->token.type = CONST;
+    cs->token.line = line;
+    cs->token.pos = pos;
+    cs->token.value = buf_finish(cs);
+}
+
 bool CharStar_next(CharStar* cs) {
     while (cs->cur != '\0') {
+        // Ignore whitespace
         if (cs->cur == ' ' || cs->cur == '\t') {
             CharStar_seek(cs);
             continue;
@@ -208,6 +238,10 @@ bool CharStar_next(CharStar* cs) {
         }
         else if (cs->cur == '"') {
             read_string(cs);
+            return true;
+        }
+        else if (is_digit(cs->cur) || (cs->cur == '.' && is_digit(cs->next))) {
+            read_numeric(cs);
             return true;
         }
 
